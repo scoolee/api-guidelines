@@ -1,0 +1,96 @@
+extends:
+  - spectral:oas
+  - https://unpkg.com/@stoplight/spectral-url-versioning/dist/ruleset.mjs
+  - https://unpkg.com/@stoplight/spectral-owasp-ruleset/dist/ruleset.mjs
+
+rules:
+  operation-operationId: error
+  operation-operationId-unique: error
+
+  scoolee-no-http-basic:
+    description: "Use other authentication scheme"
+    message: "HTTP Basic is not allowed"
+    severity: error
+    given: $.components.securitySchemes[*]
+    then:
+      field: scheme
+      function: pattern
+      functionOptions:
+        notMatch: basic
+
+  scoolee-have-info-title:
+    given:
+      - "$.info"
+    severity: error
+    then:
+      function: truthy
+      field: title
+    description: The `info` object must have a `title` property defined.
+    message: Must have API title defined in `info.title`
+
+  scoolee-paths-kebab-case:
+    description: All resource paths MUST follow kebab-case
+    severity: warn
+    recommended: true
+    message: "{{property}} is not kebab-case: {{error}}"
+    given: $.paths[*]~
+    then:
+      function: pattern
+      functionOptions:
+        match: "^\/([a-z0-9]+(-[a-z0-9]+)*)?(\/[a-z0-9]+(-[a-z0-9]+)*|\/{.+})*$"
+
+  scoolee-path-parameters-camelCase:
+    description: Path parameters MUST follow camelCase
+    severity: warn
+    recommended: true
+    message: "{{property}} path parameter is not camelCase: {{error}}"
+    given: $..parameters[?(@.in == 'path')].name
+    then:
+      function: pattern
+      functionOptions:
+        match: "^[a-z][a-zA-Z0-9]+$"
+
+  scoolee-definitions-camelCase-alphanumeric:
+    description: All definitions MUST follow camelCase of alphanumeric characters or `_` or `$`.
+    severity: error
+    recommended: true
+    message: "{{property}} MUST follow camelCase and be alphanumeric characters or `_` or `$`."
+    given: $.definitions[*]~
+    then:
+      function: pattern
+      functionOptions:
+        match: "/^[a-z$_]{1}[A-Z09$_]*/"
+
+  scoolee-properties-camelCase-alphanumeric:
+    description: All schema properties MUST follow camelCase and be alphanumeric characters or `_` or `$`.
+    severity: error
+    recommended: true
+    message: "{{property}} MUST follow camelCase and be alphanumeric characters or `_` or `$`."
+    given: $.definitions..properties[*]~
+    then:
+      function: pattern
+      functionOptions:
+        match: "/^[a-z$_]{1}[A-Z09$_]*/"
+
+  scoolee-headers-hyphenated-pascal-case:
+    description: All `HTTP` headers MUST use `Hyphenated-Pascal-Case` notation
+    severity: error
+    given: "$..parameters[?(@.in == 'header')].name"
+    message: "'HTTP' headers MUST follow 'Hyphenated-Pascal-Case' notation"
+    recommended: true
+    type: style
+    then: 
+      function: pattern
+      functionOptions:
+        match: "/^([A-Z][a-z0-9]-)*([A-Z][a-z0-9])+/"
+
+  scoolee-enums-upper-snake-case-format:
+    given:
+    - "$.paths..[?(@ && @.type=='string')].[enum].*"
+    severity: warn
+    then:
+      function: pattern
+      functionOptions:
+        match: "^[A-Z][A-Z_0-9]*$"
+    description: enum values should be in UPPER_SNAKE_CASE
+    message: Enum values should be in UPPER_SNAKE_CASE format
